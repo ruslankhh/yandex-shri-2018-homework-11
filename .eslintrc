@@ -1,0 +1,16 @@
+{
+  "env": {
+    "browser": true,
+    "node": true,
+    "mocha": true
+  },
+  "extends": [
+    "semistandard"
+  ],
+  "plugins": [
+    "import",
+    "node",
+    "promise",
+    "standard"
+  ]
+}
