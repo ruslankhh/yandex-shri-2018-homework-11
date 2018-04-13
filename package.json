@@ -9,6 +9,9 @@
     "test": "mocha -r babel-core/register test/**/*.test.js",
     "test-server": "json-server test/data/db.json --port 5000"
   },
+  "dependencies": {
+    "xmlhttprequest": "^1.8.0"
+  },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-eslint": "^8.1.2",
@@ -36,9 +39,5 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ruslankhh/yandex-shri-2018-homework-11/issues"
-  },
-  "homepage": "https://github.com/ruslankhh/yandex-shri-2018-homework-11#readme"
+  "license": "ISC"
 }
