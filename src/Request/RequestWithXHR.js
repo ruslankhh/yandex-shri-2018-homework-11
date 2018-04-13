@@ -3,6 +3,7 @@ import { XMLHttpRequest } from 'xmlhttprequest';
 class RequestWithXHR {
   constructor () {
     this._responses = [];
+    this._errors = [];
     this._promise = Promise.resolve();
   }
 
@@ -14,18 +15,21 @@ class RequestWithXHR {
 
         request.addEventListener('load', function (event) {
           self._responses = [this, ...self._responses];
+          self._errors = [null, ...self._errors];
 
           if (this.status === 200) {
-            onResolve(request, self._responses);
+            onResolve(request, self._responses, self._errors);
             resolve();
           } else {
-            onReject(request, self._responses);
+            onReject(request, self._responses, self._errors);
             resolve();
           }
         });
         request.addEventListener('error', function (event) {
-          self._responses = [this, ...self._responses];
-          onReject(request, self._responses);
+          self._responses = [null, ...self._responses];
+          self._errors = [this, ...self._errors];
+
+          onReject(request, self._responses, self._errors);
           resolve();
         });
 
@@ -39,7 +43,15 @@ class RequestWithXHR {
 
   then (callback = () => {}) {
     this._promise = this._promise.then(() =>
-      callback(null, this._responses)
+      callback(this._responses)
+    );
+
+    return this;
+  }
+
+  catch (callback = () => {}) {
+    this._promise = this._promise.then(() =>
+      callback(this._errors)
     );
 
     return this;
