@@ -1,18 +1,35 @@
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
-const url = require('url');
+const sinon = require('sinon');
 
 const Request = require('../../src/Request/RequestWithXHR');
 const data = require('./../data/db.json');
 
-const requestURL = 'http://localhost:5000';
-const postsURL = url.resolve(requestURL, 'posts');
-const commentsURL = url.resolve(requestURL, 'comments');
-const profileURL = url.resolve(requestURL, 'profile');
-const errorURL = url.resolve(requestURL, 'abracadabra');
-const badURL = 'http://abracadabra';
+const postsURL = '/posts';
+const commentsURL = '/comments';
+const profileURL = '/profile';
+const errorURL = '/404';
+const badURL = 'abracadabra';
 
 describe('RequestWithXHR', () => {
+  let server;
+
+  before(() => {
+    global.XMLHttpRequest = sinon.useFakeXMLHttpRequest();
+    server = sinon.fakeServer.create({
+      autoRespond: true
+    });
+    server.respondWith(postsURL, JSON.stringify(data.posts));
+    server.respondWith(commentsURL, JSON.stringify(data.comments));
+    server.respondWith(profileURL, JSON.stringify(data.profile));
+    server.respondWith(errorURL, [404, {}, '']);
+    server.respondWith(badURL, request => request.error());
+  });
+
+  after(() => {
+    server.restore();
+  });
+
   it('обработка одного запроса', next => {
     const request = new Request();
     const handler = function (res, err) {
@@ -40,8 +57,7 @@ describe('RequestWithXHR', () => {
   it('обработка неверного запроса', next => {
     const request = new Request();
     const handler = function (res, err) {
-      expect(res[0]).to.equal(null);
-      expect(err[0].code).to.equal('ENOTFOUND');
+      expect(res[0].status).to.equal(0);
     };
 
     request
@@ -89,17 +105,16 @@ describe('RequestWithXHR', () => {
       expect(res[0].json()).to.deep.equal(data.posts);
       expect(res[1].json()).to.deep.equal(data.comments);
       expect(res[2].json()).to.deep.equal(data.profile);
-      expect(res[3]).to.equal(null);
-      expect(err[3].code).to.equal('ENOTFOUND');
+      expect(res[3].status).to.equal(0);
     };
     const handlerResponses = function (res) {
       expect(res[0].json()).to.deep.equal(data.posts);
       expect(res[1].json()).to.deep.equal(data.comments);
       expect(res[2].json()).to.deep.equal(data.profile);
-      expect(res[3]).to.equal(null);
+      expect(res[3].status).to.equal(0);
     };
     const handlerErrors = function (err) {
-      expect(err[3].code).to.equal('ENOTFOUND');
+      expect(err[3]).to.not.equal(null);
     };
 
     request
