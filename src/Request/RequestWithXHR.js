@@ -1,5 +1,4 @@
-import { XMLHttpRequest } from 'xmlhttprequest';
-
+/* global XMLHttpRequest */
 class RequestWithXHR {
   constructor () {
     this._responses = [];
@@ -19,7 +18,11 @@ class RequestWithXHR {
             statusText,
             body: responseText,
             json () {
-              return JSON.parse(responseText);
+              try {
+                return JSON.parse(responseText);
+              } catch (error) {
+                return {};
+              }
             }
           };
 
@@ -31,9 +34,18 @@ class RequestWithXHR {
         };
 
         const onError = () => {
-          const { statusText: error } = request;
+          const { status, statusText, responseText } = request;
+          const response = {
+            status,
+            statusText,
+            body: responseText,
+            json () {
+              return {};
+            }
+          };
+          const error = statusText;
 
-          this._responses = [...this._responses, null];
+          this._responses = [...this._responses, response];
           this._errors = [...this._errors, error];
           onReject(this._responses, this._errors);
           resolve();
