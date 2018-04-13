@@ -11,27 +11,45 @@ class RequestWithXHR {
     this._promise = this._promise.then(() => {
       return new Promise(resolve => {
         const request = new XMLHttpRequest();
-        const self = this;
 
-        request.addEventListener('load', function (event) {
-          self._responses = [this, ...self._responses];
-          self._errors = [null, ...self._errors];
+        const onSuccess = () => {
+          const { status, statusText, responseText } = request;
+          const response = {
+            data: JSON.parse(responseText),
+            status,
+            statusText,
+            request
+          };
 
-          if (this.status === 200) {
-            onResolve(request, self._responses, self._errors);
-            resolve();
-          } else {
-            onReject(request, self._responses, self._errors);
-            resolve();
-          }
-        });
-        request.addEventListener('error', function (event) {
-          self._responses = [null, ...self._responses];
-          self._errors = [this, ...self._errors];
+          this._responses = [...this._responses, response];
+          this._errors = [...this._errors, null];
 
-          onReject(request, self._responses, self._errors);
+          onResolve(this._responses, this._errors);
           resolve();
-        });
+        };
+
+        const onError = () => {
+          const { status, statusText } = request;
+          const response = {
+            data: {},
+            status,
+            statusText,
+            request
+          };
+          const error = {
+            ...statusText,
+            response,
+            request
+          };
+
+          this._responses = [...this._responses, response];
+          this._errors = [...this._errors, error];
+          onReject(this._responses, this._errors);
+          resolve();
+        };
+
+        request.addEventListener('load', onSuccess, false);
+        request.addEventListener('error', onError, false);
 
         request.open('GET', url, true);
         request.send();
