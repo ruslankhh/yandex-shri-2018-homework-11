@@ -17,7 +17,7 @@ describe('RequestWithXHR', () => {
     const request = new RequestWithXHR();
     const handler = function (res, err) {
       expect(res[0].status).to.equal(200);
-      expect(res[0].data).to.deep.equal(data.posts);
+      expect(res[0].json()).to.deep.equal(data.posts);
     };
 
     request
@@ -29,7 +29,7 @@ describe('RequestWithXHR', () => {
     const request = new RequestWithXHR();
     const handler = function (res, err) {
       expect(res[0].status).to.equal(404);
-      expect(res[0].data).to.deep.equal({});
+      expect(res[0].json()).to.deep.equal({});
     };
 
     request
@@ -41,7 +41,7 @@ describe('RequestWithXHR', () => {
     const request = new RequestWithXHR();
     const handler = function (res, err) {
       expect(res[0].status).to.equal(0);
-      expect(res[0].data).to.deep.equal({});
+      expect(res[0].json()).to.deep.equal({});
     };
 
     request
@@ -53,15 +53,15 @@ describe('RequestWithXHR', () => {
     const request = new RequestWithXHR();
     const handler = function (res, err) {
       expect(res[0].status).to.equal(200);
-      expect(res[0].data).to.deep.equal(data.posts);
+      expect(res[0].json()).to.deep.equal(data.posts);
     };
     const handler1 = function (res, err) {
       expect(res[1].status).to.equal(200);
-      expect(res[1].data).to.deep.equal(data.comments);
+      expect(res[1].json()).to.deep.equal(data.comments);
     };
     const handler2 = function (res, err) {
       expect(res[2].status).to.equal(200);
-      expect(res[2].data).to.deep.equal(data.profile);
+      expect(res[2].json()).to.deep.equal(data.profile);
     };
 
     request
@@ -74,31 +74,31 @@ describe('RequestWithXHR', () => {
   it('доступ к ответам на предыдущие запросы', next => {
     const request = new RequestWithXHR();
     const handler = function (res, err) {
-      expect(res[0].data).to.deep.equal(data.posts);
+      expect(res[0].json()).to.deep.equal(data.posts);
     };
     const handler1 = function (res, err) {
-      expect(res[0].data).to.deep.equal(data.posts);
-      expect(res[1].data).to.deep.equal(data.comments);
+      expect(res[0].json()).to.deep.equal(data.posts);
+      expect(res[1].json()).to.deep.equal(data.comments);
     };
     const handler2 = function (res, err) {
-      expect(res[0].data).to.deep.equal(data.posts);
-      expect(res[1].data).to.deep.equal(data.comments);
-      expect(res[2].data).to.deep.equal(data.profile);
+      expect(res[0].json()).to.deep.equal(data.posts);
+      expect(res[1].json()).to.deep.equal(data.comments);
+      expect(res[2].json()).to.deep.equal(data.profile);
     };
     const handler3 = function (res, err) {
-      expect(res[0].data).to.deep.equal(data.posts);
-      expect(res[1].data).to.deep.equal(data.comments);
-      expect(res[2].data).to.deep.equal(data.profile);
+      expect(res[0].json()).to.deep.equal(data.posts);
+      expect(res[1].json()).to.deep.equal(data.comments);
+      expect(res[2].json()).to.deep.equal(data.profile);
       expect(res[3].status).to.deep.equal(0);
-      expect(res[3].data).to.deep.equal({});
+      expect(res[3].json()).to.deep.equal({});
       expect(err[3].code).to.equal('ENOTFOUND');
     };
     const handlerResponses = function (res) {
-      expect(res[0].data).to.deep.equal(data.posts);
-      expect(res[1].data).to.deep.equal(data.comments);
-      expect(res[2].data).to.deep.equal(data.profile);
+      expect(res[0].json()).to.deep.equal(data.posts);
+      expect(res[1].json()).to.deep.equal(data.comments);
+      expect(res[2].json()).to.deep.equal(data.profile);
       expect(res[3].status).to.deep.equal(0);
-      expect(res[3].data).to.deep.equal({});
+      expect(res[3].json()).to.deep.equal({});
     };
     const handlerErrors = function (err) {
       expect(err[3].code).to.equal('ENOTFOUND');

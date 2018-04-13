@@ -15,10 +15,13 @@ class RequestWithXHR {
         const onSuccess = () => {
           const { status, statusText, responseText } = request;
           const response = {
-            data: JSON.parse(responseText),
             status,
             statusText,
-            request
+            body: responseText,
+            request,
+            json () {
+              return JSON.parse(responseText);
+            }
           };
 
           this._responses = [...this._responses, response];
@@ -29,12 +32,15 @@ class RequestWithXHR {
         };
 
         const onError = () => {
-          const { status, statusText } = request;
+          const { status, statusText, responseText } = request;
           const response = {
-            data: {},
             status,
             statusText,
-            request
+            body: responseText,
+            request,
+            json () {
+              return {};
+            }
           };
           const error = {
             ...statusText,
