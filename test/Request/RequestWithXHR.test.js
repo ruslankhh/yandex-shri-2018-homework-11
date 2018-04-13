@@ -40,8 +40,8 @@ describe('RequestWithXHR', () => {
   it('обработка неверного запроса', next => {
     const request = new RequestWithXHR();
     const handler = function (res, err) {
-      expect(res[0].status).to.equal(0);
-      expect(res[0].json()).to.deep.equal({});
+      expect(res[0]).to.equal(null);
+      expect(err[0].code).to.equal('ENOTFOUND');
     };
 
     request
@@ -89,16 +89,14 @@ describe('RequestWithXHR', () => {
       expect(res[0].json()).to.deep.equal(data.posts);
       expect(res[1].json()).to.deep.equal(data.comments);
       expect(res[2].json()).to.deep.equal(data.profile);
-      expect(res[3].status).to.deep.equal(0);
-      expect(res[3].json()).to.deep.equal({});
+      expect(res[3]).to.equal(null);
       expect(err[3].code).to.equal('ENOTFOUND');
     };
     const handlerResponses = function (res) {
       expect(res[0].json()).to.deep.equal(data.posts);
       expect(res[1].json()).to.deep.equal(data.comments);
       expect(res[2].json()).to.deep.equal(data.profile);
-      expect(res[3].status).to.deep.equal(0);
-      expect(res[3].json()).to.deep.equal({});
+      expect(res[3]).to.equal(null);
     };
     const handlerErrors = function (err) {
       expect(err[3].code).to.equal('ENOTFOUND');

@@ -31,18 +31,9 @@ class RequestWithXHR {
         };
 
         const onError = () => {
-          const { status, statusText, responseText } = request;
-          const response = {
-            status,
-            statusText,
-            body: responseText,
-            json () {
-              return {};
-            }
-          };
-          const error = statusText;
+          const { statusText: error } = request;
 
-          this._responses = [...this._responses, response];
+          this._responses = [...this._responses, null];
           this._errors = [...this._errors, error];
           onReject(this._responses, this._errors);
           resolve();
