@@ -2,7 +2,7 @@ const { describe, it } = require('mocha');
 const { expect } = require('chai');
 const url = require('url');
 
-const RequestWithXHR = require('../../src/Request/RequestWithXHR');
+const Request = require('../../src/Request/RequestWithXHR');
 const data = require('./../data/db.json');
 
 const requestURL = 'http://localhost:5000';
@@ -14,7 +14,7 @@ const badURL = 'http://abracadabra';
 
 describe('RequestWithXHR', () => {
   it('обработка одного запроса', next => {
-    const request = new RequestWithXHR();
+    const request = new Request();
     const handler = function (res, err) {
       expect(res[0].status).to.equal(200);
       expect(res[0].json()).to.deep.equal(data.posts);
@@ -26,7 +26,7 @@ describe('RequestWithXHR', () => {
   });
 
   it('обработка запроса с ошибкой', next => {
-    const request = new RequestWithXHR();
+    const request = new Request();
     const handler = function (res, err) {
       expect(res[0].status).to.equal(404);
       expect(res[0].json()).to.deep.equal({});
@@ -38,7 +38,7 @@ describe('RequestWithXHR', () => {
   });
 
   it('обработка неверного запроса', next => {
-    const request = new RequestWithXHR();
+    const request = new Request();
     const handler = function (res, err) {
       expect(res[0]).to.equal(null);
       expect(err[0].code).to.equal('ENOTFOUND');
@@ -50,7 +50,7 @@ describe('RequestWithXHR', () => {
   });
 
   it('обработка нескольких последовательных запросов', next => {
-    const request = new RequestWithXHR();
+    const request = new Request();
     const handler = function (res, err) {
       expect(res[0].status).to.equal(200);
       expect(res[0].json()).to.deep.equal(data.posts);
@@ -72,7 +72,7 @@ describe('RequestWithXHR', () => {
   });
 
   it('доступ к ответам на предыдущие запросы', next => {
-    const request = new RequestWithXHR();
+    const request = new Request();
     const handler = function (res, err) {
       expect(res[0].json()).to.deep.equal(data.posts);
     };
