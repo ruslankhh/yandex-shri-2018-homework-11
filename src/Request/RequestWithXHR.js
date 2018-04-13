@@ -18,7 +18,6 @@ class RequestWithXHR {
             status,
             statusText,
             body: responseText,
-            request,
             json () {
               return JSON.parse(responseText);
             }
@@ -37,16 +36,11 @@ class RequestWithXHR {
             status,
             statusText,
             body: responseText,
-            request,
             json () {
               return {};
             }
           };
-          const error = {
-            ...statusText,
-            response,
-            request
-          };
+          const error = statusText;
 
           this._responses = [...this._responses, response];
           this._errors = [...this._errors, error];
