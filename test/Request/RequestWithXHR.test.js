@@ -2,7 +2,7 @@ const { describe, it } = require('mocha');
 const { expect } = require('chai');
 const sinon = require('sinon');
 
-const Request = require('../../src/Request/RequestWithXHR');
+const CustomRequest = require('../../src/Request/RequestWithXHR');
 const data = require('./../data/db.json');
 
 const postsURL = '/posts';
@@ -12,9 +12,10 @@ const errorURL = '/404';
 const badURL = 'abracadabra';
 
 describe('RequestWithXHR', () => {
+  let promises = [];
   let server;
 
-  before(() => {
+  beforeEach(() => {
     global.XMLHttpRequest = sinon.useFakeXMLHttpRequest();
     server = sinon.fakeServer.create({
       autoRespond: true
@@ -26,104 +27,131 @@ describe('RequestWithXHR', () => {
     server.respondWith(badURL, request => request.error());
   });
 
-  after(() => {
+  afterEach(() => {
+    promises = [];
     server.restore();
   });
 
-  it('обработка одного запроса', next => {
-    const request = new Request();
+  it('обработка одного запроса', () => {
+    const request = new CustomRequest();
     const handler = function (res, err) {
-      expect(res[0].status).to.equal(200);
-      expect(res[0].json()).to.deep.equal(data.posts);
+      promises.push(res[0].status);
+      promises.push(res[0].clone().json());
     };
 
-    request
+    return request
       .get(postsURL, handler, handler)
-      .then(() => next());
+      .then(() => Promise.all(promises))
+      .then(result => {
+        expect(result).to.deep.equal([200, data.posts]);
+      });
   });
 
-  it('обработка запроса с ошибкой', next => {
-    const request = new Request();
+  it('обработка запроса с ошибкой', () => {
+    const request = new CustomRequest();
     const handler = function (res, err) {
-      expect(res[0].status).to.equal(404);
-      expect(res[0].json()).to.deep.equal({});
+      promises.push(res[0].status);
     };
 
-    request
+    return request
       .get(errorURL, handler, handler)
-      .then(() => next());
+      .then(() => Promise.all(promises))
+      .then(result => {
+        expect(result).to.deep.equal([404]);
+      });
   });
 
-  it('обработка неверного запроса', next => {
-    const request = new Request();
+  it('обработка неверного запроса', () => {
+    const request = new CustomRequest();
     const handler = function (res, err) {
-      expect(res[0].status).to.equal(0);
+      promises.push(res[0]);
     };
 
-    request
+    return request
       .get(badURL, handler, handler)
-      .then(() => next());
+      .then(() => Promise.all(promises))
+      .then(result => {
+        expect(result).to.deep.equal([null]);
+      });
   });
 
-  it('обработка нескольких последовательных запросов', next => {
-    const request = new Request();
+  it('обработка нескольких последовательных запросов', () => {
+    const request = new CustomRequest();
     const handler = function (res, err) {
-      expect(res[0].status).to.equal(200);
-      expect(res[0].json()).to.deep.equal(data.posts);
+      promises.push(res[0].status);
+      promises.push(res[0].clone().json());
     };
     const handler1 = function (res, err) {
-      expect(res[1].status).to.equal(200);
-      expect(res[1].json()).to.deep.equal(data.comments);
+      promises.push(res[1].status);
+      promises.push(res[1].clone().json());
     };
     const handler2 = function (res, err) {
-      expect(res[2].status).to.equal(200);
-      expect(res[2].json()).to.deep.equal(data.profile);
+      promises.push(res[2].status);
+      promises.push(res[2].clone().json());
     };
 
-    request
+    return request
       .get(postsURL, handler, handler)
       .get(commentsURL, handler1, handler1)
       .get(profileURL, handler2, handler2)
-      .then(() => next());
+      .then(() => Promise.all(promises))
+      .then(result => {
+        expect(result).to.deep.equal([
+          200, data.posts,
+          200, data.comments,
+          200, data.profile
+        ]);
+      });
   });
 
-  it('доступ к ответам на предыдущие запросы', next => {
-    const request = new Request();
+  it('доступ к ответам на предыдущие запросы', () => {
+    const request = new CustomRequest();
     const handler = function (res, err) {
-      expect(res[0].json()).to.deep.equal(data.posts);
+      promises.push(res[0].status);
+      promises.push(res[0].clone().json());
     };
     const handler1 = function (res, err) {
-      expect(res[0].json()).to.deep.equal(data.posts);
-      expect(res[1].json()).to.deep.equal(data.comments);
+      promises.push(res[1].status);
+      promises.push(res[1].clone().json());
     };
     const handler2 = function (res, err) {
-      expect(res[0].json()).to.deep.equal(data.posts);
-      expect(res[1].json()).to.deep.equal(data.comments);
-      expect(res[2].json()).to.deep.equal(data.profile);
+      promises.push(res[2].status);
+      promises.push(res[2].clone().json());
     };
     const handler3 = function (res, err) {
-      expect(res[0].json()).to.deep.equal(data.posts);
-      expect(res[1].json()).to.deep.equal(data.comments);
-      expect(res[2].json()).to.deep.equal(data.profile);
-      expect(res[3].status).to.equal(0);
+      promises.push(res[3]);
+      promises.push(err[3]);
     };
-    const handlerResponses = function (res) {
-      expect(res[0].json()).to.deep.equal(data.posts);
-      expect(res[1].json()).to.deep.equal(data.comments);
-      expect(res[2].json()).to.deep.equal(data.profile);
-      expect(res[3].status).to.equal(0);
-    };
-    const handlerErrors = function (err) {
-      expect(err[3]).to.not.equal(null);
+    const handlerLast = function (res, err) {
+      promises.push(res[0].clone().json());
+      promises.push(res[1].clone().json());
+      promises.push(res[2].clone().json());
+      promises.push(res[3]);
+      promises.push(err[3]);
     };
 
-    request
+    return request
       .get(postsURL, handler, handler)
       .get(commentsURL, handler1, handler1)
       .get(profileURL, handler2, handler2)
       .get(badURL, handler3, handler3)
-      .then(handlerResponses)
-      .catch(handlerErrors)
-      .then(() => next());
+      .then(handlerLast)
+      .then(() => Promise.all(promises))
+      .then(result => {
+        expect(result.slice(0, 7)).to.deep.equal([
+          200, data.posts,
+          200, data.comments,
+          200, data.profile,
+          null
+        ]);
+        expect(result[7]).to.not.equal(null);
+        expect(result.slice(8, 12)).to.deep.equal([
+          data.posts,
+          data.comments,
+          data.profile,
+          null
+        ]);
+        expect(result[12]).to.not.equal(null);
+      });
   });
 });

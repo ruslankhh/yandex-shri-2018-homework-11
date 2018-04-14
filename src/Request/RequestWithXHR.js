@@ -7,75 +7,68 @@ class RequestWithXHR {
   }
 
   get (url, onResolve = () => {}, onReject = () => {}) {
-    this._promise = this._promise.then(() => {
-      return new Promise(resolve => {
-        const request = new XMLHttpRequest();
+    this._promise = this._promise
+      .then(() => {
+        const promise = new Promise((resolve, reject) => {
+          const request = new XMLHttpRequest();
 
-        const onSuccess = () => {
-          const { status, statusText, responseText } = request;
-          const response = {
-            status,
-            statusText,
-            body: responseText,
-            json () {
-              try {
-                return JSON.parse(responseText);
-              } catch (error) {
-                return {};
+          request.onload = function () {
+            const { status, statusText, response: responseBody, responseText } = request;
+            const body = 'response' in request ? responseBody : responseText;
+            const response = {
+              status,
+              statusText,
+              body,
+              url: request.responseURL,
+              clone () {
+                return { ...response };
+              },
+              json () {
+                return new Promise(resolve => resolve(JSON.parse(this.body)));
               }
-            }
+            };
+
+            resolve(response);
           };
 
-          this._responses = [...this._responses, response];
-          this._errors = [...this._errors, null];
-
-          onResolve(this._responses, this._errors);
-          resolve();
-        };
-
-        const onError = () => {
-          const { status, statusText, responseText } = request;
-          const response = {
-            status,
-            statusText,
-            body: responseText,
-            json () {
-              return {};
-            }
+          request.onerror = function () {
+            reject(new TypeError('Network request failed'));
           };
-          const error = statusText;
 
-          this._responses = [...this._responses, response];
-          this._errors = [...this._errors, error];
-          onReject(this._responses, this._errors);
-          resolve();
-        };
+          request.ontimeout = function () {
+            reject(new TypeError('Network request failed'));
+          };
 
-        request.addEventListener('load', onSuccess, false);
-        request.addEventListener('error', onError, false);
+          request.open('GET', url, true);
+          request.send();
+        });
 
-        request.open('GET', url, true);
-        request.send();
+        return promise
+          .then(response => {
+            this._responses = [...this._responses, response];
+            this._errors = [...this._errors, null];
+
+            return onResolve(this._responses, this._errors);
+          })
+          .catch(error => {
+            this._responses = [...this._responses, null];
+            this._errors = [...this._errors, error];
+
+            return onReject(this._responses, this._errors);
+          });
       });
-    });
 
     return this;
   }
 
-  then (callback = () => {}) {
-    this._promise = this._promise.then(() =>
-      callback(this._responses)
+  then (cb = () => {}) {
+    return this._promise.then(() =>
+      cb(this._responses, this._errors)
     );
-
-    return this;
   }
 
-  catch (callback = () => {}) {
-    this._promise = this._promise.then(() =>
-      callback(this._errors)
-    );
-
-    return this;
+  catch (cb = () => {}) {
+    return this._promise.catch(cb);
   }
 }
 
