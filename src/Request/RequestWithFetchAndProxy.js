@@ -12,16 +12,18 @@ class RequestWithFetchAndProxy {
       get (target, key, receiver) {
         if (key in target && typeof target[key] === 'function') {
           return function (...args) {
-            Reflect.apply(target[key], target, args);
+            target._promise = target._promise.then(() => {
+              return Reflect.apply(target[key], target, args);
+            });
 
             return this;
           };
         } else if (key in target._promise && typeof target._promise[key] === 'function') {
-          return function (onSuccess = () => {}, onError = () => {}) {
-            target._promise = Reflect.apply(target._promise[key], target._promise, [
-              data => onSuccess(data, target._responses, target._errors),
-              err => onError(err, target._responses, target._errors)
-            ]);
+          return function (...args) {
+            target._promise = target._promise[key](
+              args[0] ? val => args[0](val, target._responses, target._errors) : undefined,
+              args[1] ? val => args[1](val, target._responses, target._errors) : undefined
+            );
 
             return this;
           };
@@ -35,21 +37,19 @@ class RequestWithFetchAndProxy {
   }
 
   get (url, onResolve = () => {}, onReject = () => {}) {
-    this._promise = this._promise.then(() =>
-      fetch(url)
-        .then(response => {
-          this._responses = [...this._responses, response];
-          this._errors = [...this._errors, null];
+    return fetch(url)
+      .then(response => {
+        this._responses = [...this._responses, response];
+        this._errors = [...this._errors, null];
 
-          return onResolve(this._responses, this._errors);
-        })
-        .catch(error => {
-          this._responses = [...this._responses, null];
-          this._errors = [...this._errors, error];
+        return onResolve(this._responses, this._errors);
+      })
+      .catch(error => {
+        this._responses = [...this._responses, null];
+        this._errors = [...this._errors, error];
 
-          return onReject(this._responses, this._errors);
-        })
-    );
+        return onReject(this._responses, this._errors);
+      });
   }
 }
 
