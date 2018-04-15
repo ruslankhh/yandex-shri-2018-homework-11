@@ -117,6 +117,35 @@ describe('RequestWithFetch', () => {
       });
   });
 
+  it('обработка нескольких последовательных запросов должна быть последовательной', () => {
+    const request = new CustomRequest();
+    const result = [];
+    const handler = function (res, err) {
+      result.push(0);
+    };
+    const handler1 = function (res, err) {
+      result.push(1);
+    };
+    const handler2 = function (res, err) {
+      result.push(2);
+    };
+    const handler3 = function (res, err) {
+      result.push(3);
+    };
+
+    return request
+      .get(postsURL, handler, handler)
+      .get(commentsURL, handler1, handler1)
+      .get(profileURL, handler2, handler2)
+      .then(() => {
+        expect(result).to.deep.equal([0, 1, 2]);
+      })
+      .get(badURL, handler3, handler3)
+      .then(() => {
+        expect(result).to.deep.equal([0, 1, 2, 3]);
+      });
+  });
+
   it('доступ к ответам на предыдущие запросы', () => {
     const request = new CustomRequest();
     const handler = function (res, err) {
