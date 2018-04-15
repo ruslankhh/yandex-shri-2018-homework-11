@@ -61,14 +61,21 @@ class RequestWithXHR {
     return this;
   }
 
-  then (cb = () => {}) {
-    return this._promise.then(() =>
-      cb(this._responses, this._errors)
+  then (...args) {
+    this._promise = this._promise.then(
+      args[0] ? val => args[0](val, this._responses, this._errors) : undefined,
+      args[1] ? err => args[1](err, this._responses, this._errors) : undefined
     );
+
+    return this;
   }
 
-  catch (cb = () => {}) {
-    return this._promise.catch(cb);
+  catch (...args) {
+    this._promise = this._promise.catch(
+      args[0] ? err => args[0](err, this._responses, this._errors) : undefined
+    );
+
+    return this;
   }
 }
 
